@@ -2,6 +2,20 @@
 
 **TODO: Add description**
 
+# TODO TODO TODO
+
+ * Document different error conditions
+ * Implement `resolve!`
+ * Don’t implement “error: :string”.  Callers can use Exception.message
+ * Ability to pass in options to signify telemetry metadata
+
+
+Explination TODOs:
+
+ * The library is good for situations when you want to make sure that exceptions are turned into tuples and you don’t want to have to catch things individually (web request?)
+
+
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
