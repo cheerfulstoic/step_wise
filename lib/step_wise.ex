@@ -5,9 +5,9 @@ defmodule StepWise do
     @moduledoc "For errors returned by StepWise"
 
     @type t() :: %__MODULE__{
-      func: function(),
-      message: term()
-    }
+            func: function(),
+            message: term()
+          }
 
     defexception [:func, :message]
 
@@ -42,41 +42,31 @@ defmodule StepWise do
 
     @impl true
     def message(%{func: func, value: value, raised?: raised?}) do
-      # IO.puts("StepFunctionError MESSAGE!")
       function_info = Function.info(func)
 
-      # IO.inspect(Exception.exception?(value), label: :exception?)
-      {message, exception_name} = if Exception.exception?(value) do
-        # TODO: Put "raised" or "returned" in message
-        # value.__struct__.message(value)
-        {Exception.message(value),
-         "** (#{value.__struct__}) "
-        }
-      else
-        {inspect(value),
-          nil}
-      end
-      # |> IO.inspect(label: :stuff)
+      {message, exception_info} =
+        if Exception.exception?(value) do
+          {Exception.message(value), "** (#{value.__struct__}) "}
+        else
+          {inspect(value), nil}
+        end
 
       raised_or_returned = if(raised?, do: "raised", else: "returned")
 
-      "There was an error *#{raised_or_returned}* in #{inspect(function_info[:module])}.#{function_info[:name]}/1:\n\n#{exception_name}#{message}"
+      "There was an error *#{raised_or_returned}* in #{inspect(function_info[:module])}.#{function_info[:name]}/1:\n\n#{exception_info}#{message}"
     end
 
     @impl true
     def blame(%{func: func, value: value} = exception, stacktrace) do
-      # IO.puts("StepFunctionError BLAME!")
       if Exception.exception?(value) do
         # {origin_exception, origin_stacktrace} = value.__struct__.blame(value, exception.stacktrace)
-        {origin_exception, origin_stacktrace} = Exception.blame(:error, value, exception.stacktrace)
+        {origin_exception, origin_stacktrace} =
+          Exception.blame(:error, value, exception.stacktrace)
 
         {Map.put(exception, :value, origin_exception), origin_stacktrace}
       else
-        # TODO!!  IMPLEMENT!!
-        raise "TODO!!  IMPLEMENT!!"
+        {exception, stacktrace}
       end
-      # |> IO.inspect(label: :blame)
-
     end
   end
 
@@ -88,17 +78,9 @@ defmodule StepWise do
         func.(state)
       rescue
         exception ->
-          # IO.inspect(__STACKTRACE__, label: :stacktrace)
-          # IO.inspect(exception, label: :raised_exception)
-          # {:error, "Exception was raised: #{Exception.message(exception)}"}
-          # {:error, exception}
           {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
       catch
-        # kind, exception ->
-        #   IO.inspect(exception, label: :exception!)
-        #   {:error, StepFunctionError.exception({func, exception, true})}
-
-        value ->
+        :throw, value ->
           {:error, "Value was thrown: #{inspect(value)}"}
       end
 
@@ -124,16 +106,13 @@ defmodule StepWise do
     end
   end
 
-  def step({:error, %exception_mod{} = exception}, _func) when exception_mod in [Error, StepFunctionError] do
+  def step({:error, %exception_mod{} = exception}, _func)
+      when exception_mod in [Error, StepFunctionError] do
     {:error, exception}
   end
 
   def step({:error, value}, func) do
-    {:error,
-       Error.exception(
-         {func,
-          "Error given to initial step: #{inspect(value)}"}
-       )}
+    {:error, Error.exception({func, "Error given to initial step: #{inspect(value)}"})}
   end
 
   def step(other, func) do
@@ -173,7 +152,8 @@ defmodule StepWise do
      )}
   end
 
-  def resolve({:error, %exception_mod{} = exception}) when exception_mod in [Error, StepFunctionError] do
+  def resolve({:error, %exception_mod{} = exception})
+      when exception_mod in [Error, StepFunctionError] do
     {:error, exception}
   end
 
