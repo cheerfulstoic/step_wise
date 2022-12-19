@@ -73,37 +73,39 @@ defmodule StepWise do
   # TODO: Handle `exit`.  Other things?
   # https://tylerpachal.medium.com/error-handling-in-elixir-rescue-vs-catch-946e052db97b
   def step({:ok, state}, func) do
-    result =
-      try do
-        func.(state)
-      rescue
-        exception ->
-          {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
-      catch
-        :throw, value ->
-          {:error, "Value was thrown: #{inspect(value)}"}
+    telemetry_step_span(func, fn ->
+      result =
+        try do
+          func.(state)
+        rescue
+          exception ->
+            {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
+        catch
+          :throw, value ->
+            {:error, "Value was thrown: #{inspect(value)}"}
+        end
+
+      case result do
+        {:ok, new_state} ->
+          {:ok, new_state}
+
+        :ok ->
+          {:ok, state}
+
+        {:error, %StepFunctionError{}} = error ->
+          error
+
+        {:error, error_value} ->
+          {:error, StepFunctionError.exception({func, error_value, nil, false})}
+
+        other ->
+          {:error,
+           Error.exception(
+             {func,
+              "Value other than {:ok, _} or {:error, _} returned for step function: #{inspect(other)}"}
+           )}
       end
-
-    case result do
-      {:ok, new_state} ->
-        {:ok, new_state}
-
-      :ok ->
-        {:ok, state}
-
-      {:error, %StepFunctionError{}} = error ->
-        error
-
-      {:error, error_value} ->
-        {:error, StepFunctionError.exception({func, error_value, nil, false})}
-
-      other ->
-        {:error,
-         Error.exception(
-           {func,
-            "Value other than {:ok, _} or {:error, _} returned for step function: #{inspect(other)}"}
-         )}
-    end
+    end)
   end
 
   def step({:error, %exception_mod{} = exception}, _func)
@@ -121,6 +123,24 @@ defmodule StepWise do
        {func,
         "Value other than {:ok, _} or {:error, _} given to step/2 function: #{inspect(other)}"}
      )}
+  end
+
+  defp telemetry_step_span(step_func, func) do
+    function_info = Function.info(step_func)
+
+    module = function_info[:module]
+    func_name = function_info[:name]
+
+    id = :erlang.unique_integer()
+
+    :telemetry.span(
+      [:step_wise, :step],
+      %{system_time: System.system_time(), id: id, step_func: step_func, module: module, func_name: func_name},
+      fn ->
+        result = func.()
+        {result, %{id: id, system_time: System.system_time(), step_func: step_func, module: module, func_name: func_name, result: result}}
+      end
+    )
   end
 
   def map_step({:ok, enum}, func) do
@@ -152,15 +172,30 @@ defmodule StepWise do
      )}
   end
 
-  def resolve({:error, %exception_mod{} = exception})
+  def resolve({:error, %exception_mod{} = exception}, name)
       when exception_mod in [Error, StepFunctionError] do
+    # {:current_stacktrace, [_, _, {module, func_name, arity, [file: file, line: line]} | rest]} = Process.info(self(), :current_stacktrace)
+    :telemetry.execute(
+      [:step_wise, :resolve],
+      %{},
+      %{system_time: System.system_time(), name: name, result: {:error, exception}, success: false}
+    )
+
     {:error, exception}
   end
 
-  def resolve({:ok, value}), do: {:ok, value}
+  def resolve({:ok, value}, name) do
+    :telemetry.execute(
+      [:step_wise, :resolve],
+      %{},
+      %{system_time: System.system_time(), name: name, result: {:ok, value}, success: true}
+    )
 
-  def resolve!(result) do
-    case resolve(result) do
+    {:ok, value}
+  end
+
+  def resolve!(result, name) do
+    case resolve(result, name) do
       {:ok, value} ->
         value
 
