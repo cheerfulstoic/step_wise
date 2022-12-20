@@ -34,12 +34,6 @@ end
 
 `StepWise` will `rescue` from exceptions and `catch` any uncaught `throw`s so that they can be converted into stardard `{:error, _}` tuples (or consistently raised with `resolve!/2`).  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
 
-
-# TODO TODO TODO
-
- * Ability to pass in options to signify telemetry metadata
-
-
 # Telemetry
 
 `StepWise` implements telemetry events so that actions such as logging, metrics, and tracing can be separated as a different concern to your code.  There are three telemetry events:
@@ -83,4 +77,8 @@ end
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/step_wise>.
+
+# TODO TODO TODO
+
+ * Ability to pass in options to signify telemetry metadata
 
