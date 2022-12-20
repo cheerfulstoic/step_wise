@@ -14,7 +14,6 @@ defmodule MyApp.NotifyCommenters do
   def run(post) do
     post
     |> StepWise.step(&MyApp.Posts.get_comments/1)
-    # |> StepWise.map_step(&get_commenter/1)
     |> StepWise.map_step(fn comment ->
       # get_commenter/1 doesn't return `{:ok, _}`, so we need
       # to do that here
