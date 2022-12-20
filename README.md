@@ -30,6 +30,33 @@ defmodule MyApp.NotifyCommenters do
 end
 ```
 
+A primary use-case of `StepWise.step/1` is allowing you to chain together functions which fail in a pipe-like way.  This means starting with one type of object and either transforming it or replacing it as the chain progresses.  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
+
+```elixir
+def EmailPost do
+  def run(user_id, post_id) do
+    %{user_id: user_id, post_id: post_id}
+    |> StepWise.step(&MyApp.Posts.get_comments/1)
+    |> StepWise.step(&fetch_user_data/1)
+    |> StepWise.step(&fetch_post_data/1)
+    |> StepWise.step(&finalize/1)
+    |> StepWise.resolve(:basic_success)
+  end
+
+  def fetch_user_data(%{user_id: id} = state) do
+    {:ok, Map.put(state, :user, MyApp.Users.get(id))}
+  end
+  
+  def fetch_post_data(%{post_id: id} = state) do
+    {:ok, Map.put(state, :post, MyApp.Posts.get(id))}
+  end
+
+  def finalize(%{user: user, post: post}) do
+    # ...
+  end
+end
+```
+
 
 `StepWise` will `rescue` from exceptions and `catch` any uncaught `throw`s so that they can be converted into stardard `{:error, _}` tuples (or consistently raised with `resolve!/2`).  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
 
