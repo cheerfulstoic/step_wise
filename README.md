@@ -47,7 +47,7 @@ The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up
  * ...hand the exception to error-collecting services like Sentry, Rollbar, etc...
  * ...pattern match or act upon on the structure and attributes of the exception
 
-If you are familiar with Elixir's `with`, you may be wondering about it's relation to `StepWise` since `with` also helps you handle a series of statements which could succeed or fail.  See below for more discussion `StepWise` vs `with`.
+If you are familiar with Elixir's `with`, you may be wondering about it's relation to `StepWise` since `with` also helps you handle a series of statements which could succeed or fail.  See below for more discussion [`StepWise` vs `with`](#stepwise-vs-elixirs-with).
 
 # Telemetry
 
