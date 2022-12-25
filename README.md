@@ -136,6 +136,8 @@ end
 
 First, while `StepWise` has some overlap with `with`'s ability to handle errors, it's attempting to solve a specific problem (improving debugging of production code).  Let's discuss some of the differences:
 
+## `with`
+
 The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"](https://en.wikipedia.org/wiki/Happy_path) for a series of expressions.  The first expression which does not match it's corresponding pattern will be either:
 
  * ...returned from the `with` (if no `else` is given)
