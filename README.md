@@ -51,7 +51,7 @@ If you are familiar with Elixir's `with`, you may be wondering about it's relati
 
 # Telemetry
 
-As [my colleague](https://github.com/linduxed) put it: "Logging definitely feels like one of those areas where it very quickly jumps from 'these sprinkled out log calls are giving us a lot of value' to 'we now have a mess in both code and log output'".
+As [my colleague](https://github.com/linduxed) put it: *"Logging definitely feels like one of those areas where it very quickly jumps from 'these sprinkled out log calls are giving us a lot of value' to 'we now have a mess in both code and log output'"*
 
 Central to `StepWise` is it's telemetry events to allow actions such as logging, metrics, and tracing be separated as a different concern to your code.  There are three telemetry events:
 
@@ -67,7 +67,16 @@ Executed when a step starts with the following metadata:
 
 ## `[:step_wise, :step, :stop]`
 
-Executed when a step stop with all of the same metadata as the `start` event, but also a `result` key which is the value that was returned from the step function
+Executed when a step stop with all of the same metadata as the `start` event, but also with:
+
+ * `result`: the value (`{:ok, _}` or `{:error, _}` tuple) that was returned from the step function
+ * `success`: (!!TODO!!): A boolean describing if the result was a success (for convenience, based on `result`)
+
+There is also a `duration` as a measurement value to give the total time taken by the step.
+
+# Integration With Your App
+
+## Telemetry
 
 Here is an example of how you might implement logging for your steps ():
 
@@ -84,11 +93,48 @@ defmodule MyApp.StepWiseIntegration do
       []
     )
   end
-  
-  # ... !!TODO!! ...
+
+   def handle(
+         [:step_wise, :step, :stop],
+         %{duration: duration},
+         %{module: module, func_name: func_name, result: result},
+         _config
+       ) do
+     case result do
+       {:error, exception} ->
+         Logger.error(Exception.message(exception))
+         # Since `StepWise` wraps all errors, calling `Exception.message` will return
+         # information about the if the error was returned/raised and about which
+         # step it came from.  In the code above, calling `Exception.message` on a returned
+         # exception might give us a string like:
+         #   "There was an error *returned* in MyApp.NotifyCommenters.notify_users/1:\n\n\"Email server is not available\""
+
+       {:ok, value} ->
+         log_info("#{module}.#{func_name} *succeeded* in #{duration}")
+         # You may not choose to log successes if it generates too many logs
+     end
+   end
 end
 ```
- 
+
+## Metrics
+
+If you use `phoenix` you'll get `telemetry_metrics` and a `MyAppWeb.Telemetry` module by default.  In that case you can easily get metrics for all steps that you create:
+
+!!TODO!! NEED TO TEST THESE WITH PHOENIX DASHBOARD
+
+THE SECOND MIGHT NOT BE NEEDED.  WE MIGHT GET A COUNT (???)
+
+```elixir
+      summary([:step_wise, :step, :duration],
+        unit: {:native, :millisecond},
+        tags: [:module, :func_name]
+      ),
+      summary([:step_wise, :step, :count],
+        tags: [:name, :success]
+      ),
+```
+
 # `StepWise` vs Elixir's `with`
 
 ... !!TODO!! ...
