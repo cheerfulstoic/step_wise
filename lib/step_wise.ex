@@ -138,10 +138,14 @@ defmodule StepWise do
       %{system_time: System.system_time(), id: id, step_func: step_func, module: module, func_name: func_name},
       fn ->
         result = func.()
-        {result, %{id: id, system_time: System.system_time(), step_func: step_func, module: module, func_name: func_name, result: result}}
+
+        {result, %{id: id, system_time: System.system_time(), step_func: step_func, module: module, func_name: func_name, result: result, success: success_result?(result)}}
       end
     )
   end
+
+  def success_result?({:ok, _}), do: true
+  def success_result?({:error, _}), do: false
 
   def map_step({:ok, enum}, func) do
     Enum.reduce(enum, {:ok, []}, fn
@@ -170,37 +174,5 @@ defmodule StepWise do
        {func,
         "Value other than {:ok, _} or {:error, _} given to map_step/2 function: #{inspect(other)}"}
      )}
-  end
-
-  def resolve({:error, %exception_mod{} = exception}, name)
-      when exception_mod in [Error, StepFunctionError] do
-    # {:current_stacktrace, [_, _, {module, func_name, arity, [file: file, line: line]} | rest]} = Process.info(self(), :current_stacktrace)
-    :telemetry.execute(
-      [:step_wise, :resolve],
-      %{},
-      %{system_time: System.system_time(), name: name, result: {:error, exception}, success: false}
-    )
-
-    {:error, exception}
-  end
-
-  def resolve({:ok, value}, name) do
-    :telemetry.execute(
-      [:step_wise, :resolve],
-      %{},
-      %{system_time: System.system_time(), name: name, result: {:ok, value}, success: true}
-    )
-
-    {:ok, value}
-  end
-
-  def resolve!(result, name) do
-    case resolve(result, name) do
-      {:ok, value} ->
-        value
-
-      {:error, exception} ->
-        raise exception
-    end
   end
 end
