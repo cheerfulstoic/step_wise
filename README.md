@@ -101,7 +101,7 @@ defmodule MyApp.StepWiseIntegration do
     :telemetry.attach_many(
       __MODULE__,
       [
-        [:step_wise, :step, :start],
+        # [:step_wise, :step, :start],
         [:step_wise, :step, :stop],
       ],
       &__MODULE__.handle/4,
