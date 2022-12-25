@@ -152,19 +152,6 @@ The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"]
  * ...*requires* the use of `{:ok, _}` / `{:error, _}` tuples.
  * ...emits `telemetry` events to allow for integration with various debugging tools.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `step_wise` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:step_wise, "~> 0.1.0"}
-  ]
-end
-```
-
 # State-Based Usage
 
 Above is a primary use-case of chaining together functions in a pipe-like way (starting with one value and transforming or replacing it as the chain progresses).  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
@@ -196,6 +183,21 @@ end
 ```
 
 Note that `import StepWise` is used here.  The first example used the `StepWise` module explicitly to demonstrate the recommendation from the [Elixir guides](https://elixir-lang.org/getting-started/alias-require-and-import.html#import) to prefer `alias` over `import`.  But in self-contained modules you may find the style of `import` preferable.
+
+## Installation
+
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+by adding `step_wise` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:step_wise, "~> 0.1.0"}
+  ]
+end
+```
+
+## Documentation
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
