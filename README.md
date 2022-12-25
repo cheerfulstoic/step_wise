@@ -4,9 +4,9 @@
 
 That means that it:
 
- * ...encourages the breaking down of such code into step
+ * ...encourages the breaking down of such code into steps
  * ...requires that each step returns a success or failure state (via standard `{:ok, _}` and `{:error, _}` tuples)
- * ...provides telemetry events to separate/centralize code for concerns such as logging, metrics, and tracing.
+ * ...provides [telemetry](https://hexdocs.pm/telemetry/) events to separate/centralize code for concerns such as logging, metrics, and tracing.
 
 Let's start with some code...
 
@@ -36,7 +36,7 @@ defmodule MyApp.NotifyCommenters do
 end
 ```
 
-You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (like used above in `map_step`), though errors will be clearer when using function values coming from named functions.
+You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (i.e. as in `map_step` above), though errors will be clearer when using function values coming from named functions.
 
 The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up so that you don't have to.  All exceptions/throws will be returned as `{:error, _}` tuples so that they can be handled.  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
 
@@ -134,19 +134,22 @@ end
 
 # `StepWise` vs Elixir's `with`
 
-... !!TODO!! ...
+First, while `StepWise` has some overlap with `with`'s ability to handle errors, it's attempting to solve a specific problem (improving debugging of production code).  Let's discuss some of the differences:
 
 The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"](https://en.wikipedia.org/wiki/Happy_path) for a series of expressions.  The first expression which does not match it's corresponding pattern will be either:
 
- * Returned from the `with` (if no `else` is given)
- * Given to a series of pattern matches (using `else`)
- * 
+ * ...returned from the `with` (if no `else` is given)
+ * ...given to a series of pattern matches (using `else`)
+
+`with` also doesn't `rescue` or `catch` for you.
 
 # `StepWise`
 
- * `StepWise` uses functions to give identification to steps when something goes wrong.
- * `StepWise` `rescue`s from exceptions and `catch`es throws.
- * `StepWise` emits `telemetry` events to allow implementing meta-behavior (e.g. logs, metrics, and tracing) for processes defined via `StepWise`.
+ * ...uses functions to give identification to steps when something goes wrong.
+ * ...`rescue`s from exceptions and `catch`es throws.
+ * ...*requires* the use of `{:ok, _}` / `{:error, _}` tuples.
+ * ...emits `telemetry` events to allow for integration with various debugging tools.
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
@@ -195,8 +198,4 @@ Note that `import StepWise` is used here.  The first example used the `StepWise`
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/step_wise>.
-
-# TODO TODO TODO
-
- * Ability to pass in options to signify telemetry metadata
 
