@@ -78,7 +78,7 @@ There is also a `duration` measurement value to give the total time taken by the
 
 ## Metrics
 
-If you use `phoenix` you'll get `telemetry_metrics` and a `MyAppWeb.Telemetry` module by default.  In that case you can easily get metrics for all steps that you create:
+If you use `phoenix` you'll get `telemetry_metrics` and a `MyAppWeb.Telemetry` module by default.  In that case you can easily get metrics for time and total counts for all steps that you create:
 
 ```elixir
       summary([:step_wise, :step, :stop, :duration],
