@@ -70,9 +70,9 @@ Executed when a step starts with the following metadata:
 Executed when a step stop with all of the same metadata as the `start` event, but also with:
 
  * `result`: the value (`{:ok, _}` or `{:error, _}` tuple) that was returned from the step function
- * `success`: (!!TODO!!): A boolean describing if the result was a success (for convenience, based on `result`)
+ * `success`: A boolean describing if the result was a success (for convenience, based on `result`)
 
-There is also a `duration` as a measurement value to give the total time taken by the step.
+There is also a `duration` measurement value to give the total time taken by the step (in the `native` time unit)
 
 # Integration With Your App
 
