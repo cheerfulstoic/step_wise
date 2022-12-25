@@ -53,7 +53,7 @@ If you are familiar with Elixir's `with`, you may be wondering about it's relati
 
 As [my colleague](https://github.com/linduxed) put it: *"Logging definitely feels like one of those areas where it very quickly jumps from 'these sprinkled out log calls are giving us a lot of value' to 'we now have a mess in both code and log output'"*
 
-Central to `StepWise` is it's telemetry events to allow actions such as logging, metrics, and tracing be separated as a different concern to your code.  There are three telemetry events:
+Central to `StepWise` is it's telemetry events to allow actions such as logging, metrics, and tracing be separated as a different concern from your code.  There are three telemetry events:
 
 **`[:step_wise, :step, :start]`**
 
