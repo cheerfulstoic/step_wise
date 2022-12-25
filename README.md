@@ -1,13 +1,12 @@
 # StepWise
 
-`StepWise` is an Elixir library to wrap sequences of code which might fail.
+`StepWise` is a light wrapper for the parts of your code which need to be debuggable in production.  That means that it:
 
- * It encourages standards by requiring the use of `{:ok, _}` and `{:error, _}` tuples (no `:ok`, or `{:error, _, _}`)
- * It rescues / catches anything which bubbles up so that you don't have to.  All exceptions/throws can be returned as `{:error, _}` tuples with` StepWise.resolve` or raised as an exception with `StepWise.resolve!`
- * It can perform operations on enumerables, requiring that each iteration succeeds (via `StepWise.map_step`)
- * It sends `telemetry` events which you can subscribe to do whatever you like across all processes using `StepWise` (i.e. logging, metrics, tracing, etc...)
+ * ...encourages the breaking down of such code into step
+ * ...requires that each step returns a success of failure state (via standard `{:ok, _}` and `{:error, _}` tuples)
+ * ...provides telemetry events to separate/centralize code for concerns such as logging, metrics, and tracing.
 
-# Code Sample
+Let's look at some code and then discuss some highlights...
 
 ```elixir
 defmodule MyApp.NotifyCommenters do
@@ -30,7 +29,13 @@ defmodule MyApp.NotifyCommenters do
 end
 ```
 
-A primary use-case of `StepWise.step/1` is allowing you to chain together functions which fail in a pipe-like way.  This means starting with one type of object and either transforming it or replacing it as the chain progresses.  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
+You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (like used above in `map_step`), though errors will be clearer when using function values coming from named functions.
+
+The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up so that you don't have to.  All exceptions/throws can be returned as `{:error, _}` tuples so that they can be handled.  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
+
+# State-Based Usage
+
+Above is a primary use-case of chaining together functions in a pipe-like way (starting with one value and transforming or replacing it as the chain progresses).  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
 
 ```elixir
 def EmailPost do
@@ -46,7 +51,7 @@ def EmailPost do
   def fetch_user_data(%{user_id: id} = state) do
     {:ok, Map.put(state, :user, MyApp.Users.get(id))}
   end
-  
+
   def fetch_post_data(%{post_id: id} = state) do
     {:ok, Map.put(state, :post, MyApp.Posts.get(id))}
   end
@@ -57,10 +62,9 @@ def EmailPost do
 end
 ```
 
-
-`StepWise` will `rescue` from exceptions and `catch` any uncaught `throw`s so that they can be converted into stardard `{:error, _}` tuples (or consistently raised with `resolve!/2`).  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
-
 # Telemetry
+
+As my colleague @linduxed put it: "Logging definitely feels like one of those areas where it very quickly jumps from 'these sprinkled out log calls are giving us a lot of value' to 'we now have a mess in both code and log output'".
 
 `StepWise` implements telemetry events so that actions such as logging, metrics, and tracing can be separated as a different concern to your code.  There are three telemetry events:
 
