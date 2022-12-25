@@ -143,7 +143,7 @@ The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"]
 
 `with` also doesn't `rescue` or `catch` for you.
 
-# `StepWise`
+## `StepWise`
 
  * ...uses functions to give identification to steps when something goes wrong.
  * ...`rescue`s from exceptions and `catch`es throws.
