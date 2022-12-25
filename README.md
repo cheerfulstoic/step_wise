@@ -5,7 +5,7 @@
 That means that it:
 
  * ...encourages the breaking down of such code into step
- * ...requires that each step returns a success of failure state (via standard `{:ok, _}` and `{:error, _}` tuples)
+ * ...requires that each step returns a success or failure state (via standard `{:ok, _}` and `{:error, _}` tuples)
  * ...provides telemetry events to separate/centralize code for concerns such as logging, metrics, and tracing.
 
 Let's start with some code...
@@ -38,9 +38,9 @@ end
 
 You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (like used above in `map_step`), though errors will be clearer when using function values coming from named functions.
 
-The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up so that you don't have to.  All exceptions/throws can be returned as `{:error, _}` tuples so that they can be handled.  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
+The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up so that you don't have to.  All exceptions/throws will be returned as `{:error, _}` tuples so that they can be handled.  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
 
-`{:error, _}` tuples will always be returned with Exception values (i.e. all `{:error, _}` tuples returned which don't have exceptions will be wrapped).  This means that you can:
+`{:error, _}` tuples will always be returned with Exception values (all `{:error, _}` tuples without exceptions will be wrapped).  This means that you can:
 
  * ...call `Exception.message` to get a string
  * ...`raise` the exception value if you want to raise the error
