@@ -76,9 +76,24 @@ There is also a `duration` as a measurement value to give the total time taken b
 
 # Integration With Your App
 
-## Telemetry
+## Metrics
 
-Here is an example of how you might implement logging for your steps ():
+If you use `phoenix` you'll get `telemetry_metrics` and a `MyAppWeb.Telemetry` module by default.  In that case you can easily get metrics for all steps that you create:
+
+```elixir
+      summary([:step_wise, :step, :stop, :duration],
+        unit: {:native, :millisecond},
+        tags: [:hostname, :module, :func_name]
+      ),
+      counter([:step_wise, :step, :stop, :duration],
+        unit: {:native, :millisecond},
+        tags: [:hostname, :module, :func_name]
+      ),
+```
+
+## Logging
+
+Here is an example of how you might implement logging for your steps (call `MyApp.StepWiseIntegration.install()` somewhere like your `MyApp.Application.start/2`):
 
 ```elixir
 defmodule MyApp.StepWiseIntegration do
@@ -115,24 +130,6 @@ defmodule MyApp.StepWiseIntegration do
      end
    end
 end
-```
-
-## Metrics
-
-If you use `phoenix` you'll get `telemetry_metrics` and a `MyAppWeb.Telemetry` module by default.  In that case you can easily get metrics for all steps that you create:
-
-!!TODO!! NEED TO TEST THESE WITH PHOENIX DASHBOARD
-
-THE SECOND MIGHT NOT BE NEEDED.  WE MIGHT GET A COUNT (???)
-
-```elixir
-      summary([:step_wise, :step, :duration],
-        unit: {:native, :millisecond},
-        tags: [:module, :func_name]
-      ),
-      summary([:step_wise, :step, :count],
-        tags: [:name, :success]
-      ),
 ```
 
 # `StepWise` vs Elixir's `with`
