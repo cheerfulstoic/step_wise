@@ -12,6 +12,8 @@ Let's start with some code...
 
 ```elixir
 defmodule MyApp.NotifyCommenters do
+  # This outer `step` isn't neccessary, but it is a useful convention to be able to
+  # track the status of the whole run in addition to individual steps.
   def run(post) do
     StepWise.step({:ok, post}, &run_steps/1)
   end
@@ -33,8 +35,6 @@ defmodule MyApp.NotifyCommenters do
   end
 end
 ```
-
-First notice a main `step/1` call (inside `run/1`) which then calls a function which implements a series of steps (`run_steps/1`).  This isn't neccessary, but it is a useful convention to be able to track the status of the whole run in addition to individual steps.
 
 You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (like used above in `map_step`), though errors will be clearer when using function values coming from named functions.
 
