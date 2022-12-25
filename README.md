@@ -55,7 +55,7 @@ As [my colleague](https://github.com/linduxed) put it: *"Logging definitely feel
 
 Central to `StepWise` is it's telemetry events to allow actions such as logging, metrics, and tracing be separated as a different concern to your code.  There are three telemetry events:
 
-## `[:step_wise, :step, :start]`
+**`[:step_wise, :step, :start]`**
 
 Executed when a step starts with the following metadata:
 
@@ -65,7 +65,7 @@ Executed when a step starts with the following metadata:
  * `func_name`: The name of the `step_func` (for convenience)
  * `system_time`: The system time when the step was started
 
-## `[:step_wise, :step, :stop]`
+**`[:step_wise, :step, :stop]`**
 
 Executed when a step stop with all of the same metadata as the `start` event, but also with:
 
