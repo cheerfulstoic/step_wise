@@ -94,7 +94,7 @@ defmodule StepWiseTest do
         __MODULE__,
         [
           [:step_wise, :step, :start],
-          [:step_wise, :step, :stop],
+          [:step_wise, :step, :stop]
         ],
         fn
           path, measurements, metadata, config ->
@@ -170,12 +170,12 @@ defmodule StepWiseTest do
             func_name: :fetch_post_data,
             result:
               {:ok,
-                %{
-                  post_id: 456,
-                  user_data: %{"id" => 123, "username" => "user123"},
-                  post_data: %{"id" => 456},
-                  user_id: 123
-                }},
+               %{
+                 post_id: 456,
+                 user_data: %{"id" => 123, "username" => "user123"},
+                 post_data: %{"id" => 456},
+                 user_id: 123
+               }},
             success: true
           },
           []
@@ -192,7 +192,6 @@ defmodule StepWiseTest do
 
       assert value == "Unable to fetch user -1"
       assert_func_match(EmailPost, :fetch_user_data, error_func)
-
 
       assert_received {
         :telemetry,
@@ -215,15 +214,19 @@ defmodule StepWiseTest do
 
     test "Exception.message" do
       defmodule ErrorTest do
-        def raise_exception(_), do: raise "UP"
+        def raise_exception(_), do: raise("UP")
         def return_error(_), do: {:error, "OUT"}
       end
 
       {:error, exception} = StepWise.step({:ok, nil}, &ErrorTest.raise_exception/1)
-      assert Exception.message(exception) == "There was an error *raised* in StepWiseTest.ErrorTest.raise_exception/1:\n\n** (Elixir.RuntimeError) UP"
+
+      assert Exception.message(exception) ==
+               "There was an error *raised* in StepWiseTest.ErrorTest.raise_exception/1:\n\n** (Elixir.RuntimeError) UP"
 
       {:error, exception} = StepWise.step({:ok, nil}, &ErrorTest.return_error/1)
-      assert Exception.message(exception) == "There was an error *returned* in StepWiseTest.ErrorTest.return_error/1:\n\n\"OUT\""
+
+      assert Exception.message(exception) ==
+               "There was an error *returned* in StepWiseTest.ErrorTest.return_error/1:\n\n\"OUT\""
     end
 
     test "middle step raises exception" do

@@ -30,6 +30,7 @@ defmodule StepWise do
     @type t() :: %__MODULE__{
             func: function(),
             value: term(),
+            stacktrace: Exception.stacktrace(),
             raised?: boolean()
           }
 
@@ -135,11 +136,26 @@ defmodule StepWise do
 
     :telemetry.span(
       [:step_wise, :step],
-      %{system_time: System.system_time(), id: id, step_func: step_func, module: module, func_name: func_name},
+      %{
+        system_time: System.system_time(),
+        id: id,
+        step_func: step_func,
+        module: module,
+        func_name: func_name
+      },
       fn ->
         result = func.()
 
-        {result, %{id: id, system_time: System.system_time(), step_func: step_func, module: module, func_name: func_name, result: result, success: success_result?(result)}}
+        {result,
+         %{
+           id: id,
+           system_time: System.system_time(),
+           step_func: step_func,
+           module: module,
+           func_name: func_name,
+           result: result,
+           success: success_result?(result)
+         }}
       end
     )
   end
