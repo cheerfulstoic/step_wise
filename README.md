@@ -132,6 +132,14 @@ defmodule MyApp.StepWiseIntegration do
 end
 ```
 
+# Using `Exception` values in `{:error, _}` tuples
+
+`StepWise` always returns `Exception` objects in returned `{:error, _}` tuples (see also [this tweet](https://twitter.com/whatyouhide/status/1266405013460594695) from Andrea Leopardi).  This has a number of advantages:
+
+ * Callers can either use `Exception.message/1` or simply `raise` the exception value, depending on what is needed
+ * Callers can pattern match on the returned value since `Exception` structs have attributes that are used to describe them
+ * Since `Exception` values are just structs, they can be documented
+
 # `StepWise` vs Elixir's `with`
 
 First, while `StepWise` has some overlap with `with`'s ability to handle errors, it's attempting to solve a specific problem (improving debugging of production code).  Let's discuss some of the differences:
