@@ -47,7 +47,7 @@ The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up
  * ...hand the exception to error-collecting services like Sentry, Rollbar, etc...
  * ...pattern match or act upon on the structure and attributes of the exception
 
-You might also check out [this tweet](https://twitter.com/whatyouhide/status/1266405013460594695) from Andrea Leopardi and the [linked blog post](https://web.archive.org/web/20180414015950/http://michal.muskala.eu/2017/02/10/error-handling-in-elixir-libraries.html#comments-whatyouhide-errors).
+You might also check out [this tweet](https://twitter.com/whatyouhide/status/1266405013460594695) from Andrea Leopardi and the [linked blog post](https://web.archive.org/web/20180414015950/http://michal.muskala.eu/2017/02/10/error-handling-in-elixir-libraries.html#comments-whatyouhide-errors) regarding `Exception` values in error tuples.
 
 If you are familiar with Elixir's `with`, you may be wondering about it's relation to `StepWise` since `with` also helps you handle a series of statements which could succeed or fail.  See below for more discussion [`StepWise` vs `with`](#stepwise-vs-elixirs-with).
 
