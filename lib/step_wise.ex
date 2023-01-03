@@ -80,10 +80,18 @@ defmodule StepWise do
           func.(state)
         rescue
           exception ->
-            {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
+            if wrap_step_function_errors? do
+              {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
+            else
+              raise exception
+            end
         catch
           :throw, value ->
-            {:error, "Value was thrown: #{inspect(value)}"}
+            if wrap_step_function_errors? do
+              {:error, "Value was thrown: #{inspect(value)}"}
+            else
+              throw(value)
+            end
         end
 
       case result do
@@ -97,7 +105,11 @@ defmodule StepWise do
           error
 
         {:error, error_value} ->
-          {:error, StepFunctionError.exception({func, error_value, nil, false})}
+          if wrap_step_function_errors?() do
+            {:error, StepFunctionError.exception({func, error_value, nil, false})}
+          else
+            {:error, error_value}
+          end
 
         other ->
           {:error,
@@ -115,7 +127,11 @@ defmodule StepWise do
   end
 
   def step({:error, value}, func) do
-    {:error, Error.exception({func, "Error given to initial step: #{inspect(value)}"})}
+    if wrap_step_function_errors?() do
+      {:error, Error.exception({func, "Error passed to step: #{inspect(value)}"})}
+    else
+      {:error, value}
+    end
   end
 
   def step(other, func) do
@@ -124,6 +140,10 @@ defmodule StepWise do
        {func,
         "Value other than {:ok, _} or {:error, _} given to step/2 function: #{inspect(other)}"}
      )}
+  end
+
+  defp wrap_step_function_errors? do
+    Application.get_env(:step_wise, :wrap_step_function_errors, true)
   end
 
   defp telemetry_step_span(step_func, func) do

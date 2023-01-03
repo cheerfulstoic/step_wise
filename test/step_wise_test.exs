@@ -1,5 +1,5 @@
 defmodule StepWiseTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   # TODO: Test exception when expected value returned from step
 
@@ -102,6 +102,8 @@ defmodule StepWiseTest do
         end,
         []
       )
+
+      on_exit(fn -> :ok = Application.delete_env(:step_wise, :wrap_step_function_errors) end)
 
       :ok
     end
@@ -212,6 +214,18 @@ defmodule StepWiseTest do
       }
     end
 
+    test "configured to not wrap errors" do
+      :ok = Application.put_env(:step_wise, :wrap_step_function_errors, false)
+
+      {:error, value} =
+        {:ok, %{user_id: -1, post_id: 456}}
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
+        |> StepWise.step(&EmailPost.fetch_post_data/1)
+        |> StepWise.step(&EmailPost.send_email/1)
+
+      assert value == "Unable to fetch user -1"
+    end
+
     test "Exception.message" do
       defmodule ErrorTest do
         def raise_exception(_), do: raise("UP")
@@ -238,6 +252,19 @@ defmodule StepWiseTest do
 
       assert %MatchError{term: {:error, "Invalid post ID"}} = value
       assert_func_match(EmailPost, :fetch_post_data, error_func)
+    end
+
+    test "middle step raises exception (no wrapping)" do
+      Application.put_env(:step_wise, :wrap_step_function_errors, false)
+
+      assert_raise MatchError,
+                   "no match of right hand side value: {:error, \"Invalid post ID\"}",
+                   fn ->
+                     {:ok, %{user_id: 123, post_id: -1}}
+                     |> StepWise.step(&EmailPost.fetch_user_data/1)
+                     |> StepWise.step(&EmailPost.fetch_post_data/1)
+                     |> StepWise.step(fn _ -> {:ok, nil} end)
+                   end
     end
 
     test "pattern match can't be found in step function" do
@@ -285,13 +312,32 @@ defmodule StepWiseTest do
       assert_func_match(EmailPost, :throw_if_needed, error_func)
     end
 
+    test "middle step throws (no wrapping)" do
+      Application.put_env(:step_wise, :wrap_step_function_errors, false)
+
+      catch_throw(
+        {:ok, %{user_id: 123, post_id: 456, throw_it!: true}}
+        |> EmailPost.steps()
+      ) == "Here we throw!"
+    end
+
     test "initial step is given an error" do
       {:error, %StepWise.Error{func: error_func, message: error_message}} =
         {:error, :initial_error}
         |> EmailPost.steps()
 
-      assert error_message == "Error given to initial step: :initial_error"
+      assert error_message == "Error passed to step: :initial_error"
       assert_func_match(EmailPost, :fetch_user_data, error_func)
+    end
+
+    test "initial step is given an error (no wrapping)" do
+      Application.put_env(:step_wise, :wrap_step_function_errors, false)
+
+      {:error, reason} =
+        {:error, :initial_error}
+        |> EmailPost.steps()
+
+      assert reason == :initial_error
     end
 
     test "step isn't given an :ok or :error value" do
