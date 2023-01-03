@@ -58,9 +58,8 @@ defmodule StepWise do
     end
 
     @impl true
-    def blame(%{func: func, value: value} = exception, stacktrace) do
+    def blame(%{func: _func, value: value} = exception, stacktrace) do
       if Exception.exception?(value) do
-        # {origin_exception, origin_stacktrace} = value.__struct__.blame(value, exception.stacktrace)
         {origin_exception, origin_stacktrace} =
           Exception.blame(:error, value, exception.stacktrace)
 
@@ -80,14 +79,14 @@ defmodule StepWise do
           func.(state)
         rescue
           exception ->
-            if wrap_step_function_errors? do
+            if wrap_step_function_errors?() do
               {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
             else
               raise exception
             end
         catch
           :throw, value ->
-            if wrap_step_function_errors? do
+            if wrap_step_function_errors?() do
               {:error, "Value was thrown: #{inspect(value)}"}
             else
               throw(value)
