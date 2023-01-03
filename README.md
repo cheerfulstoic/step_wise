@@ -47,6 +47,8 @@ The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up
  * ...hand the exception to error-collecting services like Sentry, Rollbar, etc...
  * ...pattern match or act upon on the structure and attributes of the exception
 
+You might also check out [this tweet](https://twitter.com/whatyouhide/status/1266405013460594695) from Andrea Leopardi and the [linked blog post](https://web.archive.org/web/20180414015950/http://michal.muskala.eu/2017/02/10/error-handling-in-elixir-libraries.html#comments-whatyouhide-errors).
+
 If you are familiar with Elixir's `with`, you may be wondering about it's relation to `StepWise` since `with` also helps you handle a series of statements which could succeed or fail.  See below for more discussion [`StepWise` vs `with`](#stepwise-vs-elixirs-with).
 
 # Telemetry
@@ -131,14 +133,6 @@ defmodule MyApp.StepWiseIntegration do
    end
 end
 ```
-
-# Using `Exception` values in `{:error, _}` tuples
-
-`StepWise` always returns `Exception` objects in returned `{:error, _}` tuples (see also [this tweet](https://twitter.com/whatyouhide/status/1266405013460594695) from Andrea Leopardi).  This has a number of advantages:
-
- * Callers can either use `Exception.message/1` or simply `raise` the exception value, depending on what is needed
- * Callers can pattern match on the returned value since `Exception` structs have attributes that are used to describe them
- * Since `Exception` values are just structs, they can be documented
 
 # `StepWise` vs Elixir's `with`
 
