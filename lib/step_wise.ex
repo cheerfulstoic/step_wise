@@ -101,9 +101,6 @@ defmodule StepWise do
         {:ok, new_state} ->
           {:ok, new_state}
 
-        :ok ->
-          {:ok, state}
-
         {:error, %StepFunctionError{}} = error ->
           error
 
