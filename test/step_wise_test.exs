@@ -7,8 +7,6 @@ defmodule StepWiseTest do
   #       or should there just be a final transform which turns a
   #       Map state into a value?
 
-  # TODO: Test to cover case of nesting steps inside of one larger step
-
   # Module which pretentds to get a response from a remote system
   defmodule RemoteSystem do
     def fetch_user(user_id) do
@@ -176,6 +174,41 @@ defmodule StepWiseTest do
                }},
             success: true
           },
+          []
+        }
+      }
+    end
+
+    test "Nesting steps" do
+      defmodule NestTest do
+        def steps(initial) do
+          {:ok, initial}
+          |> StepWise.step(&EmailPost.fetch_user_data/1)
+          |> StepWise.step(&EmailPost.fetch_post_data/1)
+          |> StepWise.step(&EmailPost.send_email/1)
+        end
+      end
+
+      {:ok, %{post_data: %{"id" => 456}, user_data: %{"id" => 123, "username" => "user123"}}} =
+        {:ok, %{user_id: 123, post_id: 456}}
+        |> StepWise.step(&NestTest.steps/1)
+
+      assert_received {
+        :telemetry,
+        {
+          [:step_wise, :step, :start],
+          %{system_time: _},
+          %{id: _, step_func: _, module: NestTest, func_name: :steps, system_time: _},
+          []
+        }
+      }
+
+      assert_received {
+        :telemetry,
+        {
+          [:step_wise, :step, :start],
+          %{system_time: _},
+          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_user_data, system_time: _},
           []
         }
       }

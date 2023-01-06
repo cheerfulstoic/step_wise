@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added 
+### Added
 
 - GitHub Actions workflows to test Elixir 1.12-1.14 and OTP 23-25 (thanks @warmwaffles / #1)
 
@@ -17,4 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support Elixir 1.12 in `mix.exs`
 - Use `reraise` instead of `raise` when not wrapping exceptions
 
+### Changed
+
+- Created test for nested steps
 
