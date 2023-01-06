@@ -7,10 +7,6 @@ defmodule StepWiseTest do
   #       or should there just be a final transform which turns a
   #       Map state into a value?
 
-  # TODO: Some way to add handling for failures?
-  #
-  # TODO: Some way to add cleanup?
-
   # TODO: Test to cover case of nesting steps inside of one larger step
 
   # Module which pretentds to get a response from a remote system
@@ -365,6 +361,8 @@ defmodule StepWiseTest do
     def assert_func_match(expected_module, expected_name, actual_func) do
       info = Function.info(actual_func)
 
+      # OTP 24 and earlier were all like `:"-fun.the_name/1-"` and
+      # OTP 25 was all like `:the_name`
       assert info[:name] in [expected_name, :"-fun.#{expected_name}/1-"]
       assert info[:module] == expected_module
     end
