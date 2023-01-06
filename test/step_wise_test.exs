@@ -21,16 +21,6 @@ defmodule StepWiseTest do
   end
 
   defmodule EmailPost do
-    def steps(value) do
-      value
-      |> StepWise.step(&fetch_user_data/1)
-      |> StepWise.step(&fetch_post_data/1)
-      |> StepWise.step(&side_effect/1)
-      |> StepWise.step(&throw_if_needed/1)
-      |> StepWise.step(&arbitrary_result/1)
-      |> StepWise.step(&send_email/1)
-    end
-
     def fetch_user_data(%{user_id: user_id} = state) do
       case RemoteSystem.fetch_user(user_id) do
         {:ok, user_data} ->
@@ -329,7 +319,9 @@ defmodule StepWiseTest do
     test "middle step throws" do
       {:error, %StepWise.StepFunctionError{func: error_func, value: value}} =
         {:ok, %{user_id: 123, post_id: 456, throw_it!: true}}
-        |> EmailPost.steps()
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
+        |> StepWise.step(&EmailPost.throw_if_needed/1)
+        |> StepWise.step(&EmailPost.arbitrary_result/1)
 
       assert value == "Value was thrown: \"Here we throw!\""
       assert_func_match(EmailPost, :throw_if_needed, error_func)
@@ -340,14 +332,16 @@ defmodule StepWiseTest do
 
       assert catch_throw(
                {:ok, %{user_id: 123, post_id: 456, throw_it!: true}}
-               |> EmailPost.steps()
+               |> StepWise.step(&EmailPost.fetch_user_data/1)
+               |> StepWise.step(&EmailPost.throw_if_needed/1)
+               |> StepWise.step(&EmailPost.arbitrary_result/1)
              ) == "Here we throw!"
     end
 
     test "initial step is given an error" do
       {:error, %StepWise.Error{func: error_func, message: error_message}} =
         {:error, :initial_error}
-        |> EmailPost.steps()
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
 
       assert error_message == "Error passed to step: :initial_error"
       assert_func_match(EmailPost, :fetch_user_data, error_func)
@@ -358,7 +352,7 @@ defmodule StepWiseTest do
 
       {:error, reason} =
         {:error, :initial_error}
-        |> EmailPost.steps()
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
 
       assert reason == :initial_error
     end
@@ -366,7 +360,7 @@ defmodule StepWiseTest do
     test "step isn't given an :ok or :error value" do
       {:error, %StepWise.Error{func: error_func, message: error_message}} =
         :not_ok_or_error
-        |> EmailPost.steps()
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
 
       assert error_message ==
                "Value other than {:ok, _} or {:error, _} given to step/2 function: :not_ok_or_error"
@@ -377,7 +371,9 @@ defmodule StepWiseTest do
     test "middle step doesn't return :ok or :error result" do
       {:error, %StepWise.Error{func: error_func, message: error_message}} =
         {:ok, %{user_id: 123, post_id: 345, arbitrary_result_return_value: :not_ok_or_error}}
-        |> EmailPost.steps()
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
+        |> StepWise.step(&EmailPost.arbitrary_result/1)
+        |> StepWise.step(&EmailPost.send_email/1)
 
       assert error_message ==
                "Value other than {:ok, _} or {:error, _} returned for step function: :not_ok_or_error"
