@@ -5,7 +5,7 @@ defmodule StepWise.MixProject do
     [
       app: :step_wise,
       version: "0.3.0",
-      elixir: "~> 1.13",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: "A tool to help bring sanity to pipelines that can fail",

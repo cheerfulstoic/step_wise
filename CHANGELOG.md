@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Update tests to support change in `Function.info/1` / `:erlang.fun_info/1` between OTP 24 and 25
+- Update tests to support change in `Function.info/1` between OTP 24 and 25
+- Support Elixir 1.12 in `mix.exs`
 
 
