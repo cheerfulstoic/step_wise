@@ -365,7 +365,7 @@ defmodule StepWiseTest do
     def assert_func_match(expected_module, expected_name, actual_func) do
       info = Function.info(actual_func)
 
-      assert info[:name] == expected_name
+      assert info[:name] in [expected_name, :"-fun.#{expected_name}/1-"]
       assert info[:module] == expected_module
     end
   end
