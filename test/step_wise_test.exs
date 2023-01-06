@@ -77,6 +77,13 @@ defmodule StepWiseTest do
   end
 
   describe ".step" do
+    # Made this an anonymous function, but got an error from `telemetry`
+    defmodule HandleTelemetry do
+      def handle_telemetry(path, measurements, metadata, config) do
+        send(self(), {:telemetry, {path, measurements, metadata, config}})
+      end
+    end
+
     setup do
       :telemetry.attach_many(
         __MODULE__,
@@ -84,10 +91,7 @@ defmodule StepWiseTest do
           [:step_wise, :step, :start],
           [:step_wise, :step, :stop]
         ],
-        fn
-          path, measurements, metadata, config ->
-            send(self(), {:telemetry, {path, measurements, metadata, config}})
-        end,
+        &HandleTelemetry.handle_telemetry/4,
         []
       )
 
@@ -209,7 +213,7 @@ defmodule StepWiseTest do
     end
 
     test "first step fails" do
-      {:error, %StepWise.StepFunctionError{func: error_func, value: value} = exception} =
+      {:error, %StepWise.StepFunctionError{func: error_func, value: value}} =
         {:ok, %{user_id: -1, post_id: 456}}
         |> StepWise.step(&EmailPost.fetch_user_data/1)
         |> StepWise.step(&EmailPost.fetch_post_data/1)
@@ -295,11 +299,12 @@ defmodule StepWiseTest do
         {:ok, value}
       end
 
-      {:error, %StepWise.StepFunctionError{func: error_func, value: value} = error} =
+      {:error, %StepWise.StepFunctionError{func: error_func, value: value}} =
         {:ok, %{user_id: 123, post_id: -1}}
         |> StepWise.step(func)
 
-      assert %FunctionClauseError{function: func} = value
+      assert func == error_func
+      assert %FunctionClauseError{} = value
     end
 
     test "FunctionClauseError" do
@@ -333,7 +338,7 @@ defmodule StepWiseTest do
     test "middle step throws (no wrapping)" do
       Application.put_env(:step_wise, :wrap_step_function_errors, false)
 
-      catch_throw(
+      assert catch_throw(
         {:ok, %{user_id: 123, post_id: 456, throw_it!: true}}
         |> EmailPost.steps()
       ) == "Here we throw!"
