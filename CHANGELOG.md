@@ -15,5 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update tests to support change in `Function.info/1` between OTP 24 and 25
 - Support Elixir 1.12 in `mix.exs`
+- Use `reraise` instead of `raise` when not wrapping exceptions
 
 

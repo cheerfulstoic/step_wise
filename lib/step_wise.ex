@@ -82,7 +82,7 @@ defmodule StepWise do
             if wrap_step_function_errors?() do
               {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
             else
-              raise exception
+              reraise exception, __STACKTRACE__
             end
         catch
           :throw, value ->
