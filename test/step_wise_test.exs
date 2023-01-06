@@ -339,9 +339,9 @@ defmodule StepWiseTest do
       Application.put_env(:step_wise, :wrap_step_function_errors, false)
 
       assert catch_throw(
-        {:ok, %{user_id: 123, post_id: 456, throw_it!: true}}
-        |> EmailPost.steps()
-      ) == "Here we throw!"
+               {:ok, %{user_id: 123, post_id: 456, throw_it!: true}}
+               |> EmailPost.steps()
+             ) == "Here we throw!"
     end
 
     test "initial step is given an error" do
