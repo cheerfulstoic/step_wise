@@ -139,7 +139,7 @@ end
 First, while `StepWise` has some overlap with `with`'s ability to handle errors, it's attempting to solve a specific problem (improving debugging of production code).  Let's discuss some of the differences:
 
 ## `with`
-
+withmix
 The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"](https://en.wikipedia.org/wiki/Happy_path) for a series of expressions.  The first expression which does not match it's corresponding pattern will be either:
 
  * ...returned from the `with` (if no `else` is given)
@@ -154,9 +154,21 @@ The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"]
  * ...*requires* the use of `{:ok, _}` / `{:error, _}` tuples.
  * ...emits `telemetry` events to allow for integration with various debugging tools.
 
+# Tests
+
+`StepWise` supports configuration to disable the wrapping of exceptions and throws:
+
+```elixir
+config :step_wise, :wrap_step_function_errors, false
+```
+
+This is primarily useful just for your `test` environment. Since `StepWise` wraps errors, you would need to test for `StepWise.Error` and `StepWise.StepFunctionError` values, which exist for wrapping and formatting errors in production environments.
+
+Alternatively you might choose to create helpers which allow you to test for errors without needing to worry about the details of `StepWise.Error` and `StepWise.StepFunctionError`.
+
 # State-Based Usage
 
-Above is a primary use-case of chaining together functions in a pipe-like way (starting with one value and transforming or replacing it as the chain progresses).  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
+Above is a primary use-case of chaining together functions in a pipe-like way ().  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
 
 ```elixir
 def EmailPost do
