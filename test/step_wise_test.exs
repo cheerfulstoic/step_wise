@@ -1,13 +1,7 @@
 defmodule StepWiseTest do
   use ExUnit.Case, async: false
 
-  # TODO: Test exception when expected value returned from step
-
-  # TODO: Resolve should take a function which returns a final value
-  #       or should there just be a final transform which turns a
-  #       Map state into a value?
-
-  # Module which pretentds to get a response from a remote system
+  # Module which pretends to get a response from a remote system
   defmodule RemoteSystem do
     def fetch_user(user_id) do
       if user_id >= 0 do
@@ -53,10 +47,10 @@ defmodule StepWiseTest do
       {:ok, Map.put(state, :post_data, post_data)}
     end
 
-    def side_effect(%{post_id: _post_id}) do
+    def side_effect(%{post_id: _post_id} = state) do
       # Do something that doesn't change the state
 
-      :ok
+      {:ok, state}
     end
 
     def throw_if_needed(state) do
@@ -325,11 +319,6 @@ defmodule StepWiseTest do
       # FunctionClauseError.blame/2 to output more detail about the error
       assert {EmailPost, :with_integer_guard, [:atom], [file: 'test/step_wise_test.exs', line: _]} =
                List.first(stacktrace)
-
-      # TODO:
-      # Having steps inside of the test is good, but need to have tests
-      # that check that we get the right function listed here:
-      # assert_func_match(EmailPost, :fetch_post_data, error_func)
     end
 
     test "middle step throws" do
