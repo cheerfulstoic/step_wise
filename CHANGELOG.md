@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2023-01-08
+
 ### Added
 
 - GitHub Actions workflows to test Elixir 1.12-1.14 and OTP 23-25 (thanks @warmwaffles / #1)
