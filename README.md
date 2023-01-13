@@ -115,12 +115,15 @@ defmodule MyApp.StepWiseIntegration do
    def handle(
          [:step_wise, :step, :stop],
          %{duration: duration},
-         %{module: module, func_name: func_name, result: result},
+         %{module: module, func_name: func_name, input: input, result: result},
          _config
        ) do
      case result do
        {:error, exception} ->
-         Logger.error(Exception.message(exception))
+         # Getting a string via `Exception.message/1` will mention the `module` and `func_name`
+         # in the string, but if we add them as metadata (depending on where our logs go) we can
+         # more reliably filter to the correct logs.
+         Logger.error(Exception.message(exception), input: input, module: module, func_name: func_name)
          # Since `StepWise` wraps all errors, calling `Exception.message` will return
          # information about the if the error was returned/raised and about which
          # step it came from.  In the code above, calling `Exception.message` on a returned
@@ -128,7 +131,11 @@ defmodule MyApp.StepWiseIntegration do
          #   "There was an error *returned* in MyApp.NotifyCommenters.notify_users/1:\n\n\"Email server is not available\""
 
        {:ok, value} ->
-         log_info("#{module}.#{func_name} *succeeded* in #{duration}")
+         Logger.info(
+           "#{module}.#{func_name} *succeeded* in #{duration}",
+           input: input, result: result,
+           module: module, func_name: func_name
+         )
          # You may not choose to log successes if it generates too many logs
      end
    end
