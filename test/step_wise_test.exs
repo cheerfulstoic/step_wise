@@ -107,7 +107,7 @@ defmodule StepWiseTest do
         {
           [:step_wise, :step, :start],
           %{system_time: _},
-          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_user_data, system_time: _},
+          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_user_data, system_time: _, input: %{user_id: 123, post_id: 456}},
           []
         }
       }
@@ -123,6 +123,7 @@ defmodule StepWiseTest do
             step_func: _,
             module: EmailPost,
             func_name: :fetch_user_data,
+            input: %{user_id: 123, post_id: 456},
             result:
               {:ok,
                %{post_id: 456, user_data: %{"id" => 123, "username" => "user123"}, user_id: 123}}
@@ -136,7 +137,7 @@ defmodule StepWiseTest do
         {
           [:step_wise, :step, :start],
           %{system_time: _},
-          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_post_data, system_time: _},
+          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_post_data, system_time: _, input: %{user_id: 123, post_id: 456, user_data: %{"id" => 123, "username" => "user123"}}},
           []
         }
       }
@@ -152,6 +153,7 @@ defmodule StepWiseTest do
             step_func: _,
             module: EmailPost,
             func_name: :fetch_post_data,
+            input: %{user_id: 123, post_id: 456, user_data: %{"id" => 123, "username" => "user123"}},
             result:
               {:ok,
                %{
@@ -186,7 +188,7 @@ defmodule StepWiseTest do
         {
           [:step_wise, :step, :start],
           %{system_time: _},
-          %{id: _, step_func: _, module: NestTest, func_name: :steps, system_time: _},
+          %{id: _, step_func: _, module: NestTest, func_name: :steps, system_time: _, input: %{user_id: 123, post_id: 456}},
           []
         }
       }
@@ -196,7 +198,7 @@ defmodule StepWiseTest do
         {
           [:step_wise, :step, :start],
           %{system_time: _},
-          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_user_data, system_time: _},
+          %{id: _, step_func: _, module: EmailPost, func_name: :fetch_user_data, system_time: _, input: %{user_id: 123, post_id: 456}},
           []
         }
       }
@@ -223,6 +225,7 @@ defmodule StepWiseTest do
             step_func: _,
             module: EmailPost,
             func_name: :fetch_user_data,
+            input: %{user_id: -1, post_id: 456},
             result: {:error, _},
             success: false
           },

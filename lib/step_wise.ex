@@ -76,11 +76,11 @@ defmodule StepWise do
     end
   end
 
-  def step({:ok, state}, func) do
-    telemetry_step_span(func, fn ->
+  def step({:ok, input}, func) do
+    telemetry_step_span(func, input, fn ->
       result =
         try do
-          func.(state)
+          func.(input)
         rescue
           exception ->
             if wrap_step_function_errors?() do
@@ -146,7 +146,7 @@ defmodule StepWise do
     Application.get_env(:step_wise, :wrap_step_function_errors, true)
   end
 
-  defp telemetry_step_span(step_func, func) do
+  defp telemetry_step_span(step_func, input, func) do
     function_info = Function.info(step_func)
 
     module = function_info[:module]
@@ -161,7 +161,8 @@ defmodule StepWise do
         id: id,
         step_func: step_func,
         module: module,
-        func_name: func_name
+        func_name: func_name,
+        input: input
       },
       fn ->
         result = func.()
@@ -173,6 +174,7 @@ defmodule StepWise do
            step_func: step_func,
            module: module,
            func_name: func_name,
+           input: input,
            result: result,
            success: success_result?(result)
          }}

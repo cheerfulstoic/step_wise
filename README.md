@@ -65,6 +65,7 @@ Executed when a step starts with the following metadata:
  * `step_func`: The function object given to the `step` / `step_map` function
  * `module`: The module where the `step_func` is defined (for convenience)
  * `func_name`: The name of the `step_func` (for convenience)
+ * `input`: The value that was given to the step
  * `system_time`: The system time when the step was started
 
 **`[:step_wise, :step, :stop]`**
