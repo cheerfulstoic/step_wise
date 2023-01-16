@@ -15,10 +15,10 @@ defmodule MyApp.NotifyCommenters do
   # This outer `step` isn't neccessary, but it is a useful convention to be able to
   # track the status of the whole run in addition to individual steps.
   def run(post) do
-    StepWise.step({:ok, post}, &run_steps/1)
+    StepWise.step({:ok, post}, &steps/1)
   end
 
-  def run_steps(post) do
+  def steps(post) do
     {:ok, post}
     |> StepWise.step(&MyApp.Posts.get_comments/1)
     |> StepWise.map_step(fn comment ->
@@ -118,8 +118,8 @@ defmodule MyApp.StepWiseIntegration do
          %{module: module, func_name: func_name, input: input, result: result},
          _config
        ) do
-     case result do
-       {:error, exception} ->
+     case {func_name, result} do
+       {_, {:error, exception}} ->
          # Getting a string via `Exception.message/1` will mention the `module` and `func_name`
          # in the string, but if we add them as metadata (depending on where our logs go) we can
          # more reliably filter to the correct logs.
@@ -130,13 +130,17 @@ defmodule MyApp.StepWiseIntegration do
          # exception might give us a string like:
          #   "There was an error *returned* in MyApp.NotifyCommenters.notify_users/1:\n\n\"Email server is not available\""
 
-       {:ok, value} ->
+       # Above we log any errors that occur, but here we only log successes
+       # in the `steps` function so that we don't have a lot of logs.
+       # This serves as a starting point for many, but the point of using `telemetry`
+       # to separate your steps from how they are monitored is that you can organize
+       # your steps and log however you'd like.
+       {:steps, {:ok, value}} ->
          Logger.info(
            "#{module}.#{func_name} *succeeded* in #{duration}",
            input: input, result: result,
            module: module, func_name: func_name
          )
-         # You may not choose to log successes if it generates too many logs
      end
    end
 end
