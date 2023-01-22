@@ -1,6 +1,6 @@
 # StepWise
 
-`StepWise` is a light wrapper for the parts of your code which need to be debuggable in production.
+`StepWise` is a light wrapper for the parts of your code which need to be debuggable in production.  It does this by separating the implementation of your *app logic* from the implementation of how things like *logs, metrics, and traces* are created.
 
 That means that it:
 
@@ -14,11 +14,11 @@ Let's start with some code...
 defmodule MyApp.NotifyCommenters do
   # This outer `step` isn't neccessary, but it is a useful convention to be able to
   # track the status of the whole run in addition to individual steps.
-  def run(post) do
+  def run(post, method) do
     StepWise.step({:ok, post}, &steps/1)
   end
 
-  def steps(post) do
+  def steps(post, method) do
     {:ok, post}
     |> StepWise.step(&MyApp.Posts.get_comments/1)
     |> StepWise.map_step(fn comment ->
@@ -27,16 +27,16 @@ defmodule MyApp.NotifyCommenters do
 
       {:ok, MyApp.Posts.get_commenter(comment)}
     end)
-    |> StepWise.step(&notify_users/1)
+    |> StepWise.step(&notify_users/2, method)
   end
 
-  def notify_users(user) do
+  def notify_users(user, method) do
     # ...
   end
 end
 ```
 
-You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (i.e. as in `map_step` above), though errors will be clearer when using function values coming from named functions.
+You might notice that the `step/1` and `map_step/1` functions take function values.  These can be anonymous (i.e. as in `map_step` above), though errors will be clearer when using function values coming from named functions (e.g. `MyApp.Posts.get_comments` and `notify_users` in the example).
 
 The `step` and `map_step` functions `rescue` / `catch` anything which bubbles up so that you don't have to.  All exceptions/throws will be returned as `{:error, _}` tuples so that they can be handled.  `exit`s, however, are *not* caught on purpose because, as [this Elixir guide](https://elixir-lang.org/getting-started/try-catch-and-rescue.html#exits) says: "exit signals are an important part of the fault tolerant system provided by the Erlang VM..."
 
@@ -66,6 +66,7 @@ Executed when a step starts with the following metadata:
  * `module`: The module where the `step_func` is defined (for convenience)
  * `func_name`: The name of the `step_func` (for convenience)
  * `input`: The value that was given to the step
+ * `context`: The extra argument which is passed down into functions of [arity](https://en.wikipedia.org/wiki/Arity) `2`.
  * `system_time`: The system time when the step was started
 
 **`[:step_wise, :step, :stop]`**
@@ -178,9 +179,31 @@ This is primarily useful just for your `test` environment. Since `StepWise` wrap
 
 Alternatively you might choose to create helpers which allow you to test for errors without needing to worry about the details of `StepWise.Error` and `StepWise.StepFunctionError`.
 
-# State-Based Usage
+# Piped Values
 
-Above is a primary use-case of chaining together functions in a pipe-like way ().  In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
+The example above is a primary use-case of chaining together functions in a pipe-like way.  One advantage of pipes in Elixir is that it is easy to follow a single value through a serious of operations.  For example:
+
+```elixir
+session
+|> get_user()
+|> fetch_posts(10, public: true)
+```
+
+While pipes allow for functions of any number of arguments, the `step` and `map_step` functions take function values with a fixed [arity](https://en.wikipedia.org/wiki/Arity).  So in order to allow contextual arguments (like the arguments to `fetch_posts`), it is possible to give `step` and `map_step` a function of arity `2` and then pass in a value (which could be a tuple/map/list/etc... which holds multiple values).  For example:
+
+```
+{:ok, session}
+|> step(&get_user/1)
+|> step(&fetch_posts/2, limit: 10, opts: [public: true])
+```
+
+This also turns into the single `context` key in the `telemetry` events.
+
+Sometimes, however, you may need to pass more complex objects through your `StepWise` pipeline, which might look like...
+
+## State-Based Usage
+
+In some cases, however, you may want to use a more `GenServer`-like style where you have a state object that is modified along the way:
 
 ```elixir
 def EmailPost do
