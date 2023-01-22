@@ -31,8 +31,10 @@ defmodule StepWiseTest do
       end
     end
 
-    def fetch_post_data(%{post_id: post_id} = state) do
+    def fetch_post_data(%{post_id: post_id} = state, default_name \\ "Default Default") do
       {:ok, post_data} = RemoteSystem.fetch_post(post_id)
+
+      post_data = Map.put_new(post_data, "name", default_name)
 
       {:ok, Map.put(state, :post_data, post_data)}
     end
@@ -113,7 +115,8 @@ defmodule StepWiseTest do
             module: EmailPost,
             func_name: :fetch_user_data,
             system_time: _,
-            input: %{user_id: 123, post_id: 456}
+            input: %{user_id: 123, post_id: 456},
+            context: nil
           },
           []
         }
@@ -131,6 +134,7 @@ defmodule StepWiseTest do
             module: EmailPost,
             func_name: :fetch_user_data,
             input: %{user_id: 123, post_id: 456},
+            context: nil,
             result:
               {:ok,
                %{post_id: 456, user_data: %{"id" => 123, "username" => "user123"}, user_id: 123}}
@@ -154,7 +158,8 @@ defmodule StepWiseTest do
               user_id: 123,
               post_id: 456,
               user_data: %{"id" => 123, "username" => "user123"}
-            }
+            },
+            context: nil
           },
           []
         }
@@ -176,6 +181,7 @@ defmodule StepWiseTest do
               post_id: 456,
               user_data: %{"id" => 123, "username" => "user123"}
             },
+            context: nil,
             result:
               {:ok,
                %{
@@ -216,7 +222,8 @@ defmodule StepWiseTest do
             module: NestTest,
             func_name: :steps,
             system_time: _,
-            input: %{user_id: 123, post_id: 456}
+            input: %{user_id: 123, post_id: 456},
+            context: nil
           },
           []
         }
@@ -233,11 +240,67 @@ defmodule StepWiseTest do
             module: EmailPost,
             func_name: :fetch_user_data,
             system_time: _,
-            input: %{user_id: 123, post_id: 456}
+            input: %{user_id: 123, post_id: 456},
+            context: nil
           },
           []
         }
       }
+    end
+
+    test "giving a context argument" do
+      {:ok,
+       %{
+         post_data: %{"id" => 456, "name" => "Alternate Default"},
+         user_data: %{"id" => 123, "username" => "user123"}
+       }} =
+        {:ok, %{user_id: 123, post_id: 456}}
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
+        |> StepWise.step(&EmailPost.fetch_post_data/2, "Alternate Default")
+        |> StepWise.step(&EmailPost.send_email/1)
+
+      assert_received {
+        :telemetry,
+        {
+          [:step_wise, :step, :start],
+          %{system_time: _},
+          %{
+            module: EmailPost,
+            func_name: :fetch_post_data,
+            input: %{user_id: 123, post_id: 456},
+            context: "Alternate Default"
+          },
+          []
+        }
+      }
+
+      assert_received {
+        :telemetry,
+        {
+          [:step_wise, :step, :stop],
+          %{duration: _, monotonic_time: _},
+          %{
+            module: EmailPost,
+            func_name: :fetch_post_data,
+            input: %{user_id: 123, post_id: 456},
+            context: "Alternate Default",
+            result:
+              {:ok,
+               %{post_id: 456, user_data: %{"id" => 123, "username" => "user123"}, user_id: 123}}
+          },
+          []
+        }
+      }
+
+      {:ok,
+       %{
+         post_data: %{"id" => 456, "name" => "Default Default"},
+         user_data: %{"id" => 123, "username" => "user123"}
+       }} =
+        {:ok, %{user_id: 123, post_id: 456}}
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
+        |> StepWise.step(&EmailPost.fetch_post_data/1)
+        |> StepWise.step(&EmailPost.send_email/1)
     end
 
     test "first step fails" do
@@ -405,6 +468,15 @@ defmodule StepWiseTest do
                "Value other than {:ok, _} or {:error, _} given to step/2 function: :not_ok_or_error"
 
       assert_func_match(EmailPost, :fetch_user_data, error_func)
+
+      # StepWise.Error is passed through
+      {:error, %StepWise.Error{func: _error_func, message: error_message}} =
+        :not_ok_or_error
+        |> StepWise.step(&EmailPost.fetch_user_data/1)
+        |> StepWise.step(fn input -> {:ok, input} end)
+
+      assert error_message ==
+               "Value other than {:ok, _} or {:error, _} given to step/2 function: :not_ok_or_error"
     end
 
     test "middle step doesn't return :ok or :error result" do
@@ -431,6 +503,12 @@ defmodule StepWiseTest do
   end
 
   describe ".map_step" do
+    defmodule MapStepTest do
+      def double(i), do: {:ok, i * 2}
+
+      def shift_and_double(i, other), do: {:ok, (i + other) * 2}
+    end
+
     test "invalid value given" do
       {:error, %StepWise.Error{func: _error_func, message: error_message}} =
         StepWise.map_step([1, 2, 3, 4, 5], fn _ -> :something_else end)
@@ -445,6 +523,57 @@ defmodule StepWiseTest do
         |> StepWise.map_step(fn i -> {:ok, i * 2} end)
 
       assert result == {:ok, [2, 4, 6, 8, 10]}
+
+      result =
+        {:ok, [1, 2, 3, 4, 5]}
+        |> StepWise.map_step(&MapStepTest.double/1)
+
+      assert result == {:ok, [2, 4, 6, 8, 10]}
+    end
+
+    test "context argument" do
+      result =
+        {:ok, [1, 2, 3, 4, 5]}
+        |> StepWise.map_step(fn i, other -> {:ok, (i + other) * 2} end, 3)
+
+      assert result == {:ok, [8, 10, 12, 14, 16]}
+
+      result =
+        {:ok, [1, 2, 3, 4, 5]}
+        |> StepWise.map_step(&MapStepTest.shift_and_double/2, 4)
+
+      assert_received {
+        :telemetry,
+        {
+          [:step_wise, :step, :start],
+          %{system_time: _},
+          %{
+            module: MapStepTest,
+            func_name: :shift_and_double,
+            input: 2,
+            context: 4
+          },
+          []
+        }
+      }
+
+      assert_received {
+        :telemetry,
+        {
+          [:step_wise, :step, :stop],
+          %{duration: _, monotonic_time: _},
+          %{
+            module: MapStepTest,
+            func_name: :shift_and_double,
+            input: 2,
+            context: 4,
+            result: {:ok, 12}
+          },
+          []
+        }
+      }
+
+      assert result == {:ok, [10, 12, 14, 16, 18]}
     end
 
     test "basic error results cases" do

@@ -4,14 +4,15 @@ defmodule StepWise do
 
     @type t() :: %__MODULE__{
             func: function(),
+            context: term(),
             message: term()
           }
 
-    defexception [:func, :message]
+    defexception [:func, :context, :message]
 
     @impl true
-    def exception({func, message}) do
-      %__MODULE__{func: func, message: message}
+    def exception({func, context, message}) do
+      %__MODULE__{func: func, context: context, message: message}
     end
 
     @impl true
@@ -41,6 +42,9 @@ defmodule StepWise do
           }
 
     defexception [:func, :value, :stacktrace, :raised?]
+
+    @impl true
+    def exception({_func, %StepFunctionError{} = exception, _stacktrace, _raised?}), do: exception
 
     @impl true
     def exception({func, error_value, stacktrace, raised?}) do
@@ -76,33 +80,34 @@ defmodule StepWise do
     end
   end
 
-  def step({:ok, input}, func) do
-    telemetry_step_span(func, input, fn ->
-      result =
-        try do
-          func.(input)
-        rescue
-          exception ->
-            if wrap_step_function_errors?() do
-              {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
-            else
-              reraise exception, __STACKTRACE__
-            end
-        catch
-          :throw, value ->
-            if wrap_step_function_errors?() do
-              {:error, "Value was thrown: #{inspect(value)}"}
-            else
-              throw(value)
-            end
-        end
+  def step(input, func, context \\ nil)
 
-      case result do
+  def step({:ok, input}, func, context) do
+    telemetry_step_span(func, input, context, fn ->
+      try do
+        if is_nil(context) do
+          func.(input)
+        else
+          func.(input, context)
+        end
+      rescue
+        exception ->
+          if wrap_step_function_errors?() do
+            {:error, StepFunctionError.exception({func, exception, __STACKTRACE__, true})}
+          else
+            reraise exception, __STACKTRACE__
+          end
+      catch
+        :throw, value ->
+          if wrap_step_function_errors?() do
+            {:error, "Value was thrown: #{inspect(value)}"}
+          else
+            throw(value)
+          end
+      end
+      |> case do
         {:ok, new_state} ->
           {:ok, new_state}
-
-        {:error, %StepFunctionError{}} = error ->
-          error
 
         {:error, error_value} ->
           if wrap_step_function_errors?() do
@@ -114,30 +119,30 @@ defmodule StepWise do
         other ->
           {:error,
            Error.exception(
-             {func,
+             {func, context,
               "Value other than {:ok, _} or {:error, _} returned for step function: #{inspect(other)}"}
            )}
       end
     end)
   end
 
-  def step({:error, %exception_mod{} = exception}, _func)
+  def step({:error, %exception_mod{} = exception}, _func, _context)
       when exception_mod in [Error, StepFunctionError] do
     {:error, exception}
   end
 
-  def step({:error, value}, func) do
+  def step({:error, value}, func, context) do
     if wrap_step_function_errors?() do
-      {:error, Error.exception({func, "Error passed to step: #{inspect(value)}"})}
+      {:error, Error.exception({func, context, "Error passed to step: #{inspect(value)}"})}
     else
       {:error, value}
     end
   end
 
-  def step(other, func) do
+  def step(other, func, context) do
     {:error,
      Error.exception(
-       {func,
+       {func, context,
         "Value other than {:ok, _} or {:error, _} given to step/2 function: #{inspect(other)}"}
      )}
   end
@@ -146,7 +151,7 @@ defmodule StepWise do
     Application.get_env(:step_wise, :wrap_step_function_errors, true)
   end
 
-  defp telemetry_step_span(step_func, input, func) do
+  defp telemetry_step_span(step_func, input, context, func) do
     function_info = Function.info(step_func)
 
     module = function_info[:module]
@@ -162,7 +167,8 @@ defmodule StepWise do
         step_func: step_func,
         module: module,
         func_name: func_name,
-        input: input
+        input: input,
+        context: context
       },
       fn ->
         result = func.()
@@ -175,6 +181,7 @@ defmodule StepWise do
            module: module,
            func_name: func_name,
            input: input,
+           context: context,
            result: result,
            success: success_result?(result)
          }}
@@ -185,10 +192,12 @@ defmodule StepWise do
   def success_result?({:ok, _}), do: true
   def success_result?({:error, _}), do: false
 
-  def map_step({:ok, enum}, func) do
+  def map_step(input, func, context \\ nil)
+
+  def map_step({:ok, enum}, func, context) do
     Enum.reduce(enum, {:ok, []}, fn
       item, {:ok, result} ->
-        with {:ok, value} <- step({:ok, item}, func) do
+        with {:ok, value} <- step({:ok, item}, func, context) do
           {:ok, [value | result]}
         end
 
@@ -204,12 +213,12 @@ defmodule StepWise do
     end
   end
 
-  def map_step({:error, _} = error, func), do: step(error, func)
+  def map_step({:error, _} = error, func, context), do: step(error, func, context)
 
-  def map_step(other, func) do
+  def map_step(other, func, context) do
     {:error,
      Error.exception(
-       {func,
+       {func, context,
         "Value other than {:ok, _} or {:error, _} given to map_step/2 function: #{inspect(other)}"}
      )}
   end
