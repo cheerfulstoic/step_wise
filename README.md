@@ -158,7 +158,10 @@ The `with` clause in Elixir is a way to specify a pattern-matched ["happy path"]
  * ...returned from the `with` (if no `else` is given)
  * ...given to a series of pattern matches (using `else`)
 
-`with` also doesn't `rescue` or `catch` for you.
+`with` also doesn't `rescue` or `catch` for you (for better or worse, the usefulness of that depends on the situation).
+
+`step_wise` requires that each step be either an `{:ok, _}` or `{:error, _}` pattern.
+
 
 ## `StepWise`
 
