@@ -97,7 +97,7 @@ If you use `phoenix` you'll get `telemetry_metrics` and a `MyAppWeb.Telemetry` m
 
 ## Logging
 
-Here is an example of how you might implement logging for your steps (call `MyApp.StepWiseIntegration.install()` somewhere like your `MyApp.Application.start/2`):
+Here is an example of how you might implement logging for your steps (call `MyApp.StepWiseIntegration.install()` somewhere like your `MyApp.Application.start/2`) (see [this wiki page](https://github.com/cheerfulstoic/step_wise/wiki/Integration-Example) for a more thorough example):
 
 ```elixir
 defmodule MyApp.StepWiseIntegration do
