@@ -244,7 +244,7 @@ by adding `step_wise` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:step_wise, "~> 0.1.0"}
+    {:step_wise, "~> 0.6.1"}
   ]
 end
 ```
