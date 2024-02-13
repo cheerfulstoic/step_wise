@@ -1,6 +1,6 @@
 # StepWise
 
-`StepWise` is a light wrapper for the parts of your code which need to be debuggable in production.  It does this by separating the implementation of your *app logic* from the implementation of how things like *logs, metrics, and traces* are created.
+`StepWise` is a light wrapper for the parts of your Elixir code which need to be debuggable in production.  It does this by separating the implementation of your *app logic* from the implementation of how things like *logs, metrics, and traces* are created.
 
 That means that it:
 
